@@ -1,0 +1,186 @@
+# This is in conversation with emphasizing the null functional difference
+# of smart contracts and serverless architectures. Suppostion: smart
+# contracts are popular because you don't have to run servers
+# This solution provides a functional-facsimile to the developer at
+# $0.00 cost as a result of the economies of scale of the services this
+# portable architecture (Serverless Application Model [SAM]) provides.
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  XRPL-Price-Persist-Oracle
+
+Parameters:
+  ScheduleInterval:
+    Type: Number
+    Description: >-
+      Frequency in minutes
+    Default: 1
+    MinValue: 1
+  XRPLNodeJsonRpcUrl:
+    Type: String
+    Description: >-
+      The endpoint to use to connect to the XRPL, this can be a custom node endpoint.
+      The default is a Testnet node endpoint, use https://xrplcluster.com (or your own node) for Livenet
+    Default: https://s.altnet.rippletest.net:51234/
+  XRPLNodeEnvironment:
+    Type: String
+    Description: >-
+      Is this the Testnet or Livenet? This is used for development,
+      if the node is in the Testnet the oracle will TrustSet
+      to FOO. If on the Livenet, the oracle will TrustSet to USD.
+    AllowedValues:
+      - Testnet
+      - Mainnet
+    Default: Testnet
+  WalletSecret:
+    Type: String
+    NoEcho: True
+    Description: >-
+      This is the wallet seed's secret for persisting the price.
+      This wallet's seed will be used to sign transactions.
+  GitCommit:
+    Type: String
+    Default: ""
+    Description: >-
+      This input is fed directly to the function's environment variables that can be deployed publicly.
+      This is fed in during deployment (such as a public gh-action) which can then be atomically verified through the public,
+      distributed-ledger known as the XRPL
+
+      # This SHA can then be included in the attached memos or as a live endpoint providing it's deployed SHA.
+      # This can provide verification through timed events in trustless and public platforms, with the results deployed to the block chain.
+      
+
+Conditions:
+  # https://docs.aws.amazon.com/lambda/latest/dg/services-cloudwatchevents-expressions.html
+  # "For a singular value the unit must be singular (for example, rate(1 day)),
+  # otherwise plural (for example, rate(5 days))."
+  OneMinute: !Equals
+      - !Ref ScheduleInterval
+      - 1
+ 
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    # we should always be below this, emprically, this runs at ~30 seconds
+    Timeout: 40
+    MemorySize: 128
+
+
+Resources:
+  OracleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: oracle/
+      Handler: contract.handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          WALLET_SECRET: !Ref WalletSecret
+          XRPL_JSON_RPC_URL: !Ref XRPLNodeJsonRpcUrl
+          XRPL_NODE_ENVIRONMENT: !Ref XRPLNodeEnvironment
+          GIT_COMMIT: !Ref GitCommit
+      Events:
+        OracleInvokeInterval:
+          Type: Schedule
+          Properties:
+            Schedule: !If
+              - OneMinute 
+              - rate(1 minute)
+              - !Sub "rate(${ScheduleInterval} minutes)"
+            Description: The interval this function will be invoked
+            Enabled: true
+      Policies:
+        - CloudWatchPutMetricPolicy: {}
+        # - S3WritePolicy:
+        #     BucketName: !Ref CloudwatchMetricWidgetImageBucket
+
+  OraclePricesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cw_metric_image/
+      Handler: app.handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          S3_BUCKET: !Ref CloudwatchMetricWidgetImageBucket
+      Events:
+        OracleInvokeInterval:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Description: The interval this function will be invoked
+            Enabled: true
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref CloudwatchMetricWidgetImageBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cloudwatch:GetMetricWidgetImage
+              Resource: "*"
+
+  CloudwatchMetricWidgetImageBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      AccessControl: Private
+
+  CloudwatchMetricWidgetOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: "For serving the current price graph in the project's README, with cache."
+
+  CloudwatchOAIBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref CloudwatchMetricWidgetImageBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 's3:GetObject'
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref CloudwatchMetricWidgetImageBucket
+                - /*
+            Principal:
+              AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudwatchMetricWidgetOriginAccessIdentity}"
+
+  CloudwatchMetricWidgetDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+        - DomainName: !GetAtt CloudwatchMetricWidgetImageBucket.DomainName
+          Id: !Sub "${CloudwatchMetricWidgetImageBucket}Origin"
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudwatchMetricWidgetOriginAccessIdentity}"
+        Enabled: 'true'
+        Comment: Distribution for serving the graph on the project README
+        DefaultRootObject: ""
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          TargetOriginId: !Sub "${CloudwatchMetricWidgetImageBucket}Origin"
+          # 658327ea-f89d-4fab-a63d-7e88639e58f6 = CachingOptimized
+          # CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          # b2884449-e4de-46a7-ac36-70bc7f1ddd6d = CachingOptimizedForUncompressedObjects
+          CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
+          ViewerProtocolPolicy: https-only
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: 'true'
+
+Outputs:
+  OracleFunction:
+    Description: "Oracle Function ARN"
+    Value: !GetAtt OracleFunction.Arn
+  OracleFunctionIamRole:
+    Description: "Implicit IAM Role created for Oracle Function"
+    Value: !GetAtt OracleFunctionRole.Arn
