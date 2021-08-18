@@ -68,7 +68,7 @@ METRIC_WIDGET_PT3H_LINE_ALLNETS = """{
 
 METRIC_WIDGET_PT1D_LINE = """{
     "metrics": [
-        [ "xrpl/mainnet/oracle", "price", "Currency", "USD" ]
+        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#CB1FCB" } ]
     ],
     "view": "timeSeries",
     "stacked": false,
@@ -119,6 +119,7 @@ s3 = boto3.resource("s3")
 
 pt3h_line_image = s3.Object(BUCKET, "price_pt3h_line.png")
 pt3h_line_image_allnets = s3.Object(BUCKET, "price_pt3h_line_allnets.png")
+pt1d_line_image = s3.Object(BUCKET, "price_pt1d_line.png")
 # number_image = s3.Object(BUCKET, "price_number.png")
 
 
@@ -135,11 +136,21 @@ def handler(event, context):
         )
     else:
         raise Exception("Non-200 Status Code")
-    metric_widget_pt3h_line_allnets_resp = cw.get_metric_widget_image(MetricWidget=METRIC_WIDGET_PT3H_LINE_ALLNETS )
+    metric_widget_pt3h_line_allnets_resp = cw.get_metric_widget_image(MetricWidget=METRIC_WIDGET_PT3H_LINE_ALLNETS)
     if metric_widget_pt3h_line_allnets_resp["ResponseMetadata"]["HTTPStatusCode"] == 200:
         pt3h_line_image_allnets.put(
             ACL="private",
             Body=metric_widget_pt3h_line_allnets_resp["MetricWidgetImage"],
+            CacheControl=f"max-age={MAX_AGE}",
+            ContentType="image/png",
+        )
+    else:
+        raise Exception("Non-200 Status Code")
+    metric_widget_pt1d_line_resp = cw.get_metric_widget_image(MetricWidget=METRIC_WIDGET_PT1D_LINE)
+    if metric_widget_pt1d_line_resp["ResponseMetadata"]["HTTPStatusCode"] == 200:
+        pt1d_line_image.put(
+            ACL="private",
+            Body=metric_widget_pt1d_line_resp["MetricWidgetImage"],
             CacheControl=f"max-age={MAX_AGE}",
             ContentType="image/png",
         )
