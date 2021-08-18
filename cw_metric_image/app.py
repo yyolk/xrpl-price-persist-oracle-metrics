@@ -74,7 +74,7 @@ METRIC_WIDGET_PT1D_LINE = """{
     "stacked": false,
     "liveData": true,
     "stat": "Average",
-    "period": 300,
+    "period": 900,
     "yAxis": {
         "right": {
             "label": "",
