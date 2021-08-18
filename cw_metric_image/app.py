@@ -4,7 +4,7 @@ import boto3
 
 
 BUCKET = os.environ["S3_BUCKET"]
-MAX_AGE = 900  # 5 minutes
+MAX_AGE = 300  # 5 minutes
 METRIC_WIDGET_PT3H_LINE = """{
     "metrics": [
         [ "xrpl/mainnet/oracle", "price", "Currency", "USD" ]
@@ -28,7 +28,10 @@ METRIC_WIDGET_PT3H_LINE = """{
     "width": 800,
     "height": 300,
     "start": "-PT3H",
-    "end": "P0D"
+    "end": "P0D",
+    "legend": {
+        "position": "hidden"
+    }
 }"""
 
 METRIC_WIDGET_PT3H_LINE_ALLNETS = """{
