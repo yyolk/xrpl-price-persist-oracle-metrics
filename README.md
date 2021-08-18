@@ -1,6 +1,6 @@
 # xrpl-price-persist-oracle-metrics
 
-Provides metrics for [yyolk/xrpl-price-persist-oracle-sam](https://github.com/yyolk/xrpl-price-perist-oracle-sam).
+Provides metrics for [yyolk/xrpl-price-persist-oracle](https://github.com/yyolk/xrpl-price-persist-oracle).
 
 ![price USD PT-3H](https://d1nfdw5fckjov0.cloudfront.net/price_pt3h_line.png)
 
