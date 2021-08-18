@@ -85,7 +85,7 @@ METRIC_WIDGET_PT1D_LINE = """{
             "showUnits": false
         }
     },
-    "title": "XRP/USD Last 3H",
+    "title": "XRP/USD Last 24H",
     "width": 800,
     "height": 300,
     "start": "-P1D",
