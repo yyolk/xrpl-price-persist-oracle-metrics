@@ -66,6 +66,34 @@ METRIC_WIDGET_PT3H_LINE_ALLNETS = """{
     "end": "P0D"
 }"""
 
+METRIC_WIDGET_PT1D_LINE = """{
+    "metrics": [
+        [ "xrpl/mainnet/oracle", "price", "Currency", "USD" ]
+    ],
+    "view": "timeSeries",
+    "stacked": false,
+    "liveData": true,
+    "stat": "Average",
+    "period": 300,
+    "yAxis": {
+        "right": {
+            "label": "",
+            "showUnits": false
+        },
+        "left": {
+            "label": "USD",
+            "showUnits": false
+        }
+    },
+    "title": "XRP/USD Last 3H",
+    "width": 800,
+    "height": 300,
+    "start": "-P1D",
+    "end": "P0D",
+    "legend": {
+        "position": "hidden"
+    }
+}"""
 # Unfortunately 'number'/'singleValue' is not yet a supported widget image output
 # type, this will result in a default widget returned
 # METRIC_WIDGET_NUMBER = """{
