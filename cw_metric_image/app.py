@@ -56,7 +56,7 @@ METRIC_WIDGET_PT3H_LINE_ALLNETS = """{
     },
     "singleValueFullPrecision": true,
     "setPeriodToTimeRange": false,
-    "title": "XRP/USD Last3H",
+    "title": "XRP/USD Last 3H",
     "legend": {
         "position": "bottom"
     },
@@ -68,7 +68,7 @@ METRIC_WIDGET_PT3H_LINE_ALLNETS = """{
 
 METRIC_WIDGET_PT1D_LINE = """{
     "metrics": [
-        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#CB1FCB" } ]
+        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#cb1fcb" } ]
     ],
     "view": "timeSeries",
     "stacked": false,
@@ -94,6 +94,36 @@ METRIC_WIDGET_PT1D_LINE = """{
         "position": "hidden"
     }
 }"""
+
+METRIC_WIDGET_PT7D_LINE = """{
+    "metrics": [
+        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#d62728" } ]
+    ],
+    "view": "timeSeries",
+    "stacked": false,
+    "liveData": true,
+    "stat": "Average",
+    "period": 300,
+    "yAxis": {
+        "right": {
+            "label": "",
+            "showUnits": false
+        },
+        "left": {
+            "label": "USD",
+            "showUnits": false
+        }
+    },
+    "title": "XRP/USD Last 7D",
+    "width": 800,
+    "height": 300,
+    "start": "-P7D",
+    "end": "P0D",
+    "legend": {
+        "position": "hidden"
+    }
+}"""
+
 # Unfortunately 'number'/'singleValue' is not yet a supported widget image output
 # type, this will result in a default widget returned
 # METRIC_WIDGET_NUMBER = """{
@@ -120,6 +150,7 @@ s3 = boto3.resource("s3")
 pt3h_line_image = s3.Object(BUCKET, "price_pt3h_line.png")
 pt3h_line_image_allnets = s3.Object(BUCKET, "price_pt3h_line_allnets.png")
 pt1d_line_image = s3.Object(BUCKET, "price_pt1d_line.png")
+pt7d_line_image = s3.Object(BUCKET, "price_pt7d_line.png")
 # number_image = s3.Object(BUCKET, "price_number.png")
 
 
@@ -151,6 +182,16 @@ def handler(event, context):
         pt1d_line_image.put(
             ACL="private",
             Body=metric_widget_pt1d_line_resp["MetricWidgetImage"],
+            CacheControl=f"max-age={MAX_AGE}",
+            ContentType="image/png",
+        )
+    else:
+        raise Exception("Non-200 Status Code")
+    metric_widget_pt7d_line_resp = cw.get_metric_widget_image(MetricWidget=METRIC_WIDGET_PT7D_LINE)
+    if metric_widget_pt7d_line_resp["ResponseMetadata"]["HTTPStatusCode"] == 200:
+        pt7d_line_image.put(
+            ACL="private",
+            Body=metric_widget_pt7d_line_resp["MetricWidgetImage"],
             CacheControl=f"max-age={MAX_AGE}",
             ContentType="image/png",
         )

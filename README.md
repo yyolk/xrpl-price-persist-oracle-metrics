@@ -6,6 +6,8 @@ Provides metrics for [yyolk/xrpl-price-persist-oracle](https://github.com/yyolk/
 
 ![price USD PT-1D](https://d1nfdw5fckjov0.cloudfront.net/price_pt1d_line.png)
 
+![price USD PT-7D](https://d1nfdw5fckjov0.cloudfront.net/price_pt7d_line.png)
+
 ![price USD PT-3H Mainnet & Testnet](https://d1nfdw5fckjov0.cloudfront.net/price_pt3h_line_allnets.png)
 
 
