@@ -12,49 +12,41 @@ Description: >-
 
 # Parameters:
 # Conditions:
-#   # https://docs.aws.amazon.com/lambda/latest/dg/services-cloudwatchevents-expressions.html
-#   # "For a singular value the unit must be singular (for example, rate(1 day)),
-#   # otherwise plural (for example, rate(5 days))."
-#   OneMinute: !Equals
-#       - !Ref ScheduleInterval
-#       - 1
  
-
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     # we should always be below this, emprically, this runs at ~30 seconds
-    Timeout: 10
+    Timeout: 3
     MemorySize: 128
 
 
 Resources:
-  OraclePricesFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: cw_metric_image/
-      Handler: app.handler
-      Runtime: python3.9
-      Environment:
-        Variables:
-          S3_BUCKET: !Ref CloudwatchMetricWidgetImageBucket
-      Events:
-        OracleInvokeInterval:
-          Type: Schedule
-          Properties:
-            Schedule: rate(5 minutes)
-            Description: The interval this function will be invoked
-            Enabled: true
-      Policies:
-        - S3WritePolicy:
-            BucketName: !Ref CloudwatchMetricWidgetImageBucket
-        - Statement:
-            - Effect: Allow
-              Action:
-                - cloudwatch:GetMetricWidgetImage
-              Resource: "*"
+  # OraclePricesFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: cw_metric_image/
+  #     Handler: app.handler
+  #     Runtime: python3.9
+  #     Environment:
+  #       Variables:
+  #         S3_BUCKET: !Ref CloudwatchMetricWidgetImageBucket
+  #     Events:
+  #       OracleInvokeInterval:
+  #         Type: Schedule
+  #         Properties:
+  #           Schedule: rate(5 minutes)
+  #           Description: The interval this function will be invoked
+  #           Enabled: true
+  #     Policies:
+  #       - S3WritePolicy:
+  #           BucketName: !Ref CloudwatchMetricWidgetImageBucket
+  #       - Statement:
+  #           - Effect: Allow
+  #             Action:
+  #               - cloudwatch:GetMetricWidgetImage
+  #             Resource: "*"
 
-  OraclePricesFunctionDeux:
+  OraclePricesFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cw_metrics_lambdaedge/
@@ -62,9 +54,9 @@ Resources:
       Runtime: python3.8
       AutoPublishAlias: live
       Timeout: 3
-      Role: !GetAtt OraclePricesFunctionRoleDeux.Arn
+      Role: !GetAtt OraclePricesFunctionRole.Arn
 
-  OraclePricesFunctionRoleDeux:
+  OraclePricesFunctionRole:
     Type: "AWS::IAM::Role"
     Properties:
         Path: "/"
@@ -92,35 +84,35 @@ Resources:
                   - "lambda.amazonaws.com"
                   - "edgelambda.amazonaws.com"
 
-  CloudwatchMetricWidgetImageBucket:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Delete
-    Properties:
-      AccessControl: Private
+  # CloudwatchMetricWidgetImageBucket:
+  #   Type: AWS::S3::Bucket
+  #   DeletionPolicy: Delete
+  #   Properties:
+  #     AccessControl: Private
 
-  CloudwatchMetricWidgetOriginAccessIdentity:
-    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
-    Properties:
-      CloudFrontOriginAccessIdentityConfig:
-        Comment: "For serving the current price graph in the project's README, with cache."
-
-  CloudwatchOAIBucketPolicy:
-    Type: 'AWS::S3::BucketPolicy'
-    Properties:
-      Bucket: !Ref CloudwatchMetricWidgetImageBucket
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - 's3:GetObject'
-            Effect: Allow
-            Resource: !Join
-              - ''
-              - - 'arn:aws:s3:::'
-                - !Ref CloudwatchMetricWidgetImageBucket
-                - /*
-            Principal:
-              AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudwatchMetricWidgetOriginAccessIdentity}"
+  # CloudwatchMetricWidgetOriginAccessIdentity:
+  #   Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+  #   Properties:
+  #     CloudFrontOriginAccessIdentityConfig:
+  #       Comment: "For serving the current price graph in the project's README, with cache."
+  #
+  # CloudwatchOAIBucketPolicy:
+  #   Type: 'AWS::S3::BucketPolicy'
+  #   Properties:
+  #     Bucket: !Ref CloudwatchMetricWidgetImageBucket
+  #     PolicyDocument:
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Action:
+  #             - 's3:GetObject'
+  #           Effect: Allow
+  #           Resource: !Join
+  #             - ''
+  #             - - 'arn:aws:s3:::'
+  #               - !Ref CloudwatchMetricWidgetImageBucket
+  #               - /*
+  #           Principal:
+  #             AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudwatchMetricWidgetOriginAccessIdentity}"
 
   CloudwatchMetricWidgetDistribution:
     Type: AWS::CloudFront::Distribution
@@ -141,7 +133,7 @@ Resources:
           TargetOriginId: FakeOrigin
           LambdaFunctionAssociations:
             - EventType: origin-request
-              LambdaFunctionARN: !Ref OraclePricesFunctionDeux.Version
+              LambdaFunctionARN: !Ref OraclePricesFunction.Version
           CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
           ViewerProtocolPolicy: https-only
         PriceClass: PriceClass_100
@@ -173,36 +165,30 @@ Resources:
     #     ViewerCertificate:
     #       CloudFrontDefaultCertificate: 'true'
 
-  CloudwatchMetricWidgetDistributionDeux:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Origins:
-        - Id: FakeOrigin
-          DomainName: aws.amazon.com
-          CustomOriginConfig:
-            OriginProtocolPolicy: https-only
-        Enabled: 'true'
-        Comment: Distribution for serving the graph on the project README, a facade with lambda@edge.
-        DefaultRootObject: ""
-        DefaultCacheBehavior:
-          AllowedMethods:
-          - GET
-          - HEAD
-          TargetOriginId: FakeOrigin
-          LambdaFunctionAssociations:
-            - EventType: origin-request
-              LambdaFunctionARN: !Ref OraclePricesFunctionDeux.Version
-          CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
-          ViewerProtocolPolicy: https-only
-        PriceClass: PriceClass_100
-        ViewerCertificate:
-          CloudFrontDefaultCertificate: 'true'
+  # CloudwatchMetricWidgetDistributionDeux:
+  #   Type: AWS::CloudFront::Distribution
+  #   Properties:
+  #     DistributionConfig:
+  #       Origins:
+  #       - Id: FakeOrigin
+  #         DomainName: aws.amazon.com
+  #         CustomOriginConfig:
+  #           OriginProtocolPolicy: https-only
+  #       Enabled: 'true'
+  #       Comment: Distribution for serving the graph on the project README, a facade with lambda@edge.
+  #       DefaultRootObject: ""
+  #       DefaultCacheBehavior:
+  #         AllowedMethods:
+  #         - GET
+  #         - HEAD
+  #         TargetOriginId: FakeOrigin
+  #         LambdaFunctionAssociations:
+  #           - EventType: origin-request
+  #             LambdaFunctionARN: !Ref OraclePricesFunctionDeux.Version
+  #         CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
+  #         ViewerProtocolPolicy: https-only
+  #       PriceClass: PriceClass_100
+  #       ViewerCertificate:
+  #         CloudFrontDefaultCertificate: 'true'
 
 # Outputs:
-#   OracleFunction:
-#     Description: "Oracle Function ARN"
-#     Value: !GetAtt OraclePricesFunction.Arn
-#   OracleFunctionIamRole:
-#     Description: "Implicit IAM Role created for Oracle Function"
-#     Value: !GetAtt OraclePricesFunctionRole.Arn
