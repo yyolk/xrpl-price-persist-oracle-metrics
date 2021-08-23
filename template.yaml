@@ -1,50 +1,17 @@
-# This is in conversation with emphasizing the null functional difference
-# of smart contracts and serverless architectures. Suppostion: smart
-# contracts are popular because you don't have to run servers
-# This solution provides a functional-facsimile to the developer at
-# $0.00 cost as a result of the economies of scale of the services this
-# portable architecture (Serverless Application Model [SAM]) provides.
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >-
-  XRPL-Price-Persist-Oracle Metrics. Provides a scheduled function that produces an image that cloudfront will serve up for a 'live'
-  price graph of the README at https://github.com/yyolk/xrpl-price-persist-oracle-sam
+  XRPL-Price-Persist-Oracle Metrics. Provides a scheduled function that produces an image that
+  cloudfront will serve up for a 'live' price graph of the README at
+  https://github.com/yyolk/xrpl-price-persist-oracle
 
-# Parameters:
-# Conditions:
- 
 Globals:
   Function:
-    # we should always be below this, emprically, this runs at ~30 seconds
     Timeout: 3
     MemorySize: 128
 
 
 Resources:
-  # OraclePricesFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     CodeUri: cw_metric_image/
-  #     Handler: app.handler
-  #     Runtime: python3.9
-  #     Environment:
-  #       Variables:
-  #         S3_BUCKET: !Ref CloudwatchMetricWidgetImageBucket
-  #     Events:
-  #       OracleInvokeInterval:
-  #         Type: Schedule
-  #         Properties:
-  #           Schedule: rate(5 minutes)
-  #           Description: The interval this function will be invoked
-  #           Enabled: true
-  #     Policies:
-  #       - S3WritePolicy:
-  #           BucketName: !Ref CloudwatchMetricWidgetImageBucket
-  #       - Statement:
-  #           - Effect: Allow
-  #             Action:
-  #               - cloudwatch:GetMetricWidgetImage
-  #             Resource: "*"
 
   OraclePricesFunction:
     Type: AWS::Serverless::Function
@@ -53,7 +20,6 @@ Resources:
       Handler: app.handler
       Runtime: python3.8
       AutoPublishAlias: live
-      Timeout: 3
       Role: !GetAtt OraclePricesFunctionRole.Arn
 
   OraclePricesFunctionRole:
@@ -84,36 +50,6 @@ Resources:
                   - "lambda.amazonaws.com"
                   - "edgelambda.amazonaws.com"
 
-  # CloudwatchMetricWidgetImageBucket:
-  #   Type: AWS::S3::Bucket
-  #   DeletionPolicy: Delete
-  #   Properties:
-  #     AccessControl: Private
-
-  # CloudwatchMetricWidgetOriginAccessIdentity:
-  #   Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
-  #   Properties:
-  #     CloudFrontOriginAccessIdentityConfig:
-  #       Comment: "For serving the current price graph in the project's README, with cache."
-  #
-  # CloudwatchOAIBucketPolicy:
-  #   Type: 'AWS::S3::BucketPolicy'
-  #   Properties:
-  #     Bucket: !Ref CloudwatchMetricWidgetImageBucket
-  #     PolicyDocument:
-  #       Version: 2012-10-17
-  #       Statement:
-  #         - Action:
-  #             - 's3:GetObject'
-  #           Effect: Allow
-  #           Resource: !Join
-  #             - ''
-  #             - - 'arn:aws:s3:::'
-  #               - !Ref CloudwatchMetricWidgetImageBucket
-  #               - /*
-  #           Principal:
-  #             AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudwatchMetricWidgetOriginAccessIdentity}"
-
   CloudwatchMetricWidgetDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -134,61 +70,9 @@ Resources:
           LambdaFunctionAssociations:
             - EventType: origin-request
               LambdaFunctionARN: !Ref OraclePricesFunction.Version
+          # b2884449-e4de-46a7-ac36-70bc7f1ddd6d = CachingOptimizedForUncompressedObjects
           CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
           ViewerProtocolPolicy: https-only
         PriceClass: PriceClass_100
         ViewerCertificate:
           CloudFrontDefaultCertificate: 'true'
-    # Type: AWS::CloudFront::Distribution
-    # Properties:
-    #   DistributionConfig:
-    #     Origins:
-    #     - DomainName: !GetAtt CloudwatchMetricWidgetImageBucket.DomainName
-    #       Id: !Sub "${CloudwatchMetricWidgetImageBucket}Origin"
-    #       S3OriginConfig:
-    #         OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudwatchMetricWidgetOriginAccessIdentity}"
-    #     Enabled: 'true'
-    #     Comment: Distribution for serving the graph on the project README
-    #     DefaultRootObject: ""
-    #     DefaultCacheBehavior:
-    #       AllowedMethods:
-    #       - GET
-    #       - HEAD
-    #       - OPTIONS
-    #       TargetOriginId: !Sub "${CloudwatchMetricWidgetImageBucket}Origin"
-    #       # 658327ea-f89d-4fab-a63d-7e88639e58f6 = CachingOptimized
-    #       # CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
-    #       # b2884449-e4de-46a7-ac36-70bc7f1ddd6d = CachingOptimizedForUncompressedObjects
-    #       CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
-    #       ViewerProtocolPolicy: https-only
-    #     PriceClass: PriceClass_100
-    #     ViewerCertificate:
-    #       CloudFrontDefaultCertificate: 'true'
-
-  # CloudwatchMetricWidgetDistributionDeux:
-  #   Type: AWS::CloudFront::Distribution
-  #   Properties:
-  #     DistributionConfig:
-  #       Origins:
-  #       - Id: FakeOrigin
-  #         DomainName: aws.amazon.com
-  #         CustomOriginConfig:
-  #           OriginProtocolPolicy: https-only
-  #       Enabled: 'true'
-  #       Comment: Distribution for serving the graph on the project README, a facade with lambda@edge.
-  #       DefaultRootObject: ""
-  #       DefaultCacheBehavior:
-  #         AllowedMethods:
-  #         - GET
-  #         - HEAD
-  #         TargetOriginId: FakeOrigin
-  #         LambdaFunctionAssociations:
-  #           - EventType: origin-request
-  #             LambdaFunctionARN: !Ref OraclePricesFunctionDeux.Version
-  #         CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
-  #         ViewerProtocolPolicy: https-only
-  #       PriceClass: PriceClass_100
-  #       ViewerCertificate:
-  #         CloudFrontDefaultCertificate: 'true'
-
-# Outputs:
