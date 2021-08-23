@@ -124,6 +124,37 @@ METRIC_WIDGET_PT7D_LINE = """{
     }
 }"""
 
+METRIC_WIDGET_PT1M_LINE = """{
+    "metrics": [
+        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#9967ee" } ]
+    ],
+    "view": "timeSeries",
+    "stacked": false,
+    "liveData": true,
+    "stat": "Average",
+    "period": 3600,
+    "yAxis": {
+        "right": {
+            "label": "",
+            "showUnits": false
+        },
+        "left": {
+            "label": "USD",
+            "showUnits": false
+        }
+    },
+    "singleValueFullPrecision": true,
+    "setPeriodToTimeRange": false,
+    "title": "XRP/USD Last 30D",
+    "legend": {
+        "position": "hidden"
+    },
+    "width": 800,
+    "height": 300,
+    "start": "-P30D",
+    "end": "P0D"
+}"""
+
 # Unfortunately 'number'/'singleValue' is not yet a supported widget image output
 # type, this will result in a default widget returned
 # METRIC_WIDGET_NUMBER = """{
@@ -155,6 +186,9 @@ definitive_metric_widgets = {
     "1d": METRIC_WIDGET_PT1D_LINE,
     "7d": METRIC_WIDGET_PT7D_LINE,
     "1w": METRIC_WIDGET_PT7D_LINE,
+    "30d": METRIC_WIDGET_PT1M_LINE,
+    "4w": METRIC_WIDGET_PT1M_LINE,
+    "1M": METRIC_WIDGET_PT1M_LINE,
 }
 
 
