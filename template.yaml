@@ -5,7 +5,9 @@ Description: >-
   cloudfront will serve up for a 'live' price graph of the README at
   https://github.com/yyolk/xrpl-price-persist-oracle
 
+
 Globals:
+
   Function:
     Timeout: 3
     MemorySize: 128
@@ -72,6 +74,7 @@ Resources:
               LambdaFunctionARN: !Ref OraclePricesFunction.Version
           # b2884449-e4de-46a7-ac36-70bc7f1ddd6d = CachingOptimizedForUncompressedObjects
           CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
+          # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#attaching-managed-cache-policies
           ViewerProtocolPolicy: https-only
         PriceClass: PriceClass_100
         ViewerCertificate:
