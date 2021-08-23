@@ -54,6 +54,44 @@ Resources:
                 - cloudwatch:GetMetricWidgetImage
               Resource: "*"
 
+  OraclePricesFunctionDeux:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cw_metrics_lambdaedge/
+      Handler: app.handler
+      Runtime: python3.8
+      AutoPublishAlias: live
+      Timeout: 3
+      Role: !GetAtt OraclePricesFunctionRoleDeux.Arn
+
+  OraclePricesFunctionRoleDeux:
+    Type: "AWS::IAM::Role"
+    Properties:
+        Path: "/"
+        ManagedPolicyArns:
+            - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        Policies:
+          - PolicyName: "xrplOracleGetMetricImages"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - cloudwatch:GetMetricWidgetImage
+                  Resource: "*"
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Sid: "AllowLambdaServiceToAssumeRole"
+              Effect: "Allow"
+              Action: 
+                - "sts:AssumeRole"
+              Principal:
+                Service: 
+                  - "lambda.amazonaws.com"
+                  - "edgelambda.amazonaws.com"
+
   CloudwatchMetricWidgetImageBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete
@@ -83,6 +121,31 @@ Resources:
                 - /*
             Principal:
               AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudwatchMetricWidgetOriginAccessIdentity}"
+          - Action: '*'
+            Effect: Allow
+            Resource:
+              - !GetAtt CloudwatchMetricWidgetImageBucket.Arn
+              - !Join
+                - ''
+                - - !GetAtt CloudwatchMetricWidgetImageBucket.Arn
+                  - /*
+            Principal:
+              AWS: '*'
+            Condition:
+              StringEquals:
+                's3:DataAccessPointAccount': !Ref 'AWS::AccountId'
+          # - Action:
+          #     - 's3:GetObject'
+          #   Effect: Allow
+          #   Resource: !Join
+          #     - ''
+          #     - - 'arn:aws:s3:::'
+          #       - !Ref CloudwatchMetricWidgetImageBucket
+          #       - /*
+          #   Principal:
+          #     AWS: !Sub "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudwatchMetricWidgetOriginAccessIdentity}"
+          #     AWS: !GetAtt OraclePricesFunctionRole.Arn
+          #     - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/xrpl-oracle-cwm-ap/object/*"
 
   CloudwatchMetricWidgetDistribution:
     Type: AWS::CloudFront::Distribution
@@ -111,10 +174,96 @@ Resources:
         ViewerCertificate:
           CloudFrontDefaultCertificate: 'true'
 
+  CloudwatchMetricWidgetDistributionDeux:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+        - Id: FakeOrigin
+          DomainName: aws.amazon.com
+          CustomOriginConfig:
+            OriginProtocolPolicy: https-only
+        Enabled: 'true'
+        Comment: Distribution for serving the graph on the project README, a facade with lambda@edge.
+        DefaultRootObject: ""
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          TargetOriginId: FakeOrigin
+          LambdaFunctionAssociations:
+            - EventType: origin-request
+              LambdaFunctionARN: !Ref OraclePricesFunctionDeux.Version
+          CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
+          ViewerProtocolPolicy: https-only
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: 'true'
+
+  CloudwatchMetricWidgetImageBucketAccessPoint:
+    Type: AWS::S3::AccessPoint
+    Properties:
+      Bucket: !Ref CloudwatchMetricWidgetImageBucket
+      Name: xrpl-oracle-cwm-ap
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      Policy:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - "s3:GetObject"
+              # - 's3:PutObject'
+            Effect: Allow
+            Resource:
+              - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/xrpl-oracle-cwm-ap/object/*"
+            Principal:
+              AWS: !GetAtt OraclePricesFunctionRole.Arn
+      #         # AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:user/JaneDoe'
+          - Action:
+              - "s3:GetObject"
+              # - 's3:PutObject'
+            Effect: Allow
+            Resource:
+              - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/xrpl-oracle-cwm-ap/object/*"
+            Principal:
+              AWS: !GetAtt OraclePricesFunctionRole.Arn
+      #         # AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:user/JaneDoe'
+  ObjectLambdaAccessPoint:
+    Type: AWS::S3ObjectLambda::AccessPoint
+    Properties: 
+      Name: xrpl-oracle-cwm-olap
+      ObjectLambdaConfiguration: 
+        # AllowedFeatures: 
+        #   - String
+        # CloudWatchMetricsEnabled: Boolean
+        SupportingAccessPoint: !GetAtt CloudwatchMetricWidgetImageBucketAccessPoint.Arn
+        TransformationConfigurations: 
+          - Actions:
+              - GetObject
+            ContentTransformation:
+              # AwsLambda: !GetAtt OraclePricesFunction.Arn
+              AwsLambda:
+                FunctionArn: !GetAtt OraclePricesFunction.Arn
+                FunctionPayload: test
+              # FunctionArn: !GetAtt OraclePricesFunction.Arn
+              # FunctionPayload: test
+              # - |
+              #   {
+              #     "FunctionArn": "${FunctionArn}",
+              #     "FunctionPayload": "test"
+              #   }
+              # - FunctionArn: !GetAtt OraclePricesFunction.Arn
+              #
+              # # FunctionArn: !GetAtt OraclePricesFunction.Arn
+              # # FunctionPayload: "test"
 # Outputs:
 #   OracleFunction:
 #     Description: "Oracle Function ARN"
-#     Value: !GetAtt OracleFunction.Arn
+#     Value: !GetAtt OraclePricesFunction.Arn
 #   OracleFunctionIamRole:
 #     Description: "Implicit IAM Role created for Oracle Function"
-#     Value: !GetAtt OracleFunctionRole.Arn
+#     Value: !GetAtt OraclePricesFunctionRole.Arn
