@@ -127,27 +127,51 @@ Resources:
     Properties:
       DistributionConfig:
         Origins:
-        - DomainName: !GetAtt CloudwatchMetricWidgetImageBucket.DomainName
-          Id: !Sub "${CloudwatchMetricWidgetImageBucket}Origin"
-          S3OriginConfig:
-            OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudwatchMetricWidgetOriginAccessIdentity}"
+        - Id: FakeOrigin
+          DomainName: aws.amazon.com
+          CustomOriginConfig:
+            OriginProtocolPolicy: https-only
         Enabled: 'true'
-        Comment: Distribution for serving the graph on the project README
+        Comment: Distribution for serving the graph on the project README, a facade with lambda@edge.
         DefaultRootObject: ""
         DefaultCacheBehavior:
           AllowedMethods:
           - GET
           - HEAD
-          - OPTIONS
-          TargetOriginId: !Sub "${CloudwatchMetricWidgetImageBucket}Origin"
-          # 658327ea-f89d-4fab-a63d-7e88639e58f6 = CachingOptimized
-          # CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
-          # b2884449-e4de-46a7-ac36-70bc7f1ddd6d = CachingOptimizedForUncompressedObjects
+          TargetOriginId: FakeOrigin
+          LambdaFunctionAssociations:
+            - EventType: origin-request
+              LambdaFunctionARN: !Ref OraclePricesFunctionDeux.Version
           CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
           ViewerProtocolPolicy: https-only
         PriceClass: PriceClass_100
         ViewerCertificate:
           CloudFrontDefaultCertificate: 'true'
+    # Type: AWS::CloudFront::Distribution
+    # Properties:
+    #   DistributionConfig:
+    #     Origins:
+    #     - DomainName: !GetAtt CloudwatchMetricWidgetImageBucket.DomainName
+    #       Id: !Sub "${CloudwatchMetricWidgetImageBucket}Origin"
+    #       S3OriginConfig:
+    #         OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudwatchMetricWidgetOriginAccessIdentity}"
+    #     Enabled: 'true'
+    #     Comment: Distribution for serving the graph on the project README
+    #     DefaultRootObject: ""
+    #     DefaultCacheBehavior:
+    #       AllowedMethods:
+    #       - GET
+    #       - HEAD
+    #       - OPTIONS
+    #       TargetOriginId: !Sub "${CloudwatchMetricWidgetImageBucket}Origin"
+    #       # 658327ea-f89d-4fab-a63d-7e88639e58f6 = CachingOptimized
+    #       # CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+    #       # b2884449-e4de-46a7-ac36-70bc7f1ddd6d = CachingOptimizedForUncompressedObjects
+    #       CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
+    #       ViewerProtocolPolicy: https-only
+    #     PriceClass: PriceClass_100
+    #     ViewerCertificate:
+    #       CloudFrontDefaultCertificate: 'true'
 
   CloudwatchMetricWidgetDistributionDeux:
     Type: AWS::CloudFront::Distribution
@@ -165,7 +189,6 @@ Resources:
           AllowedMethods:
           - GET
           - HEAD
-          # - OPTIONS
           TargetOriginId: FakeOrigin
           LambdaFunctionAssociations:
             - EventType: origin-request

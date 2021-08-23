@@ -2,9 +2,9 @@
 
 Provides metrics for [yyolk/xrpl-price-persist-oracle](https://github.com/yyolk/xrpl-price-persist-oracle).
 
-![price USD PT-3H](https://d1abssjnm0qoa.cloudfront.net/3h)
+![price USD PT-3H](https://d1nfdw5fckjov0.cloudfront.net/3h)
 
-![price USD PT-1D](https://d1abssjnm0qoa.cloudfront.net/1d)
+![price USD PT-1D](https://d1nfdw5fckjov0.cloudfront.net/1d)
 
 ![price USD PT-7D](https://d1abssjnm0qoa.cloudfront.net/7d)
 
