@@ -8,7 +8,7 @@ Provides metrics for [yyolk/xrpl-price-persist-oracle](https://github.com/yyolk/
 
 ![price USD PT-7D](https://d1nfdw5fckjov0.cloudfront.net/7d)
 
-![price USD PT-3H Mainnet & Testnet](https://d1abssjnm0qoa.cloudfront.net/3h_all)
+![price USD PT-3H Mainnet & Testnet](https://d1nfdw5fckjov0.cloudfront.net/3h_all)
 
 
 **NOTE:** The cloudfront distribution for these images is the result of the resource in
