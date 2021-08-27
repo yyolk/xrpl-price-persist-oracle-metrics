@@ -5,6 +5,10 @@ Description: >-
   cloudfront will serve up for a 'live' price graph of the README at
   https://github.com/yyolk/xrpl-price-persist-oracle
 
+Parameters:
+  ImageDomainName:
+    Type: String
+    Default: imgs.egge.gg
 
 Globals:
 
@@ -56,6 +60,8 @@ Resources:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
+        Aliases:
+          - !Ref ImageDomainName
         Origins:
         - Id: FakeOrigin
           DomainName: aws.amazon.com
@@ -78,4 +84,15 @@ Resources:
           ViewerProtocolPolicy: https-only
         PriceClass: PriceClass_100
         ViewerCertificate:
-          CloudFrontDefaultCertificate: 'true'
+          AcmCertificateArn: !Ref ImageDomainCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1
+
+  ImageDomainCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref ImageDomainName
+      ValidationMethod: EMAIL
+      DomainValidationOptions:
+        - DomainName: !Ref ImageDomainName
+          ValidationDomain: egge.gg
