@@ -97,7 +97,7 @@ METRIC_WIDGET_PT1D_LINE = """{
 
 METRIC_WIDGET_PT7D_LINE = """{
     "metrics": [
-        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#d62728" } ]
+        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#f00d5f" } ]
     ],
     "view": "timeSeries",
     "stacked": false,
@@ -126,7 +126,7 @@ METRIC_WIDGET_PT7D_LINE = """{
 
 METRIC_WIDGET_PT1M_LINE = """{
     "metrics": [
-        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#f00d5f" } ]
+        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#d62728" } ]
     ],
     "view": "timeSeries",
     "stacked": false,
