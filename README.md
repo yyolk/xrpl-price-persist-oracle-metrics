@@ -10,6 +10,8 @@ Provides metrics for [yyolk/xrpl-price-persist-oracle](https://github.com/yyolk/
 
 ![price USD PT-30D](https://imgs.egge.gg/30d)
 
+![price USD PT-3M](https://imgs.egge.gg/3M)
+
 ![price USD PT-3H Mainnet & Testnet](https://imgs.egge.gg/3h_all)
 
 
