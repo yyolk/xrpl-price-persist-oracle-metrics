@@ -195,7 +195,7 @@ METRIC_WIDGET_PT6M_LINE = """{
     "stacked": false,
     "liveData": true,
     "stat": "Average",
-    "period": 3600,
+    "period": 21600,
     "yAxis": {
         "right": {
             "label": "",
@@ -226,7 +226,7 @@ METRIC_WIDGET_PT1Y_LINE = """{
     "stacked": false,
     "liveData": true,
     "stat": "Average",
-    "period": 3600,
+    "period": 86400,
     "yAxis": {
         "right": {
             "label": "",
