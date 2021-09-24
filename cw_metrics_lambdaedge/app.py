@@ -163,7 +163,7 @@ METRIC_WIDGET_PT3M_LINE = """{
     "stacked": false,
     "liveData": true,
     "stat": "Average",
-    "period": 3600,
+    "period": 21600,
     "yAxis": {
         "right": {
             "label": "",
