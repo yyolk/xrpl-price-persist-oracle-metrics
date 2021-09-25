@@ -2,6 +2,8 @@
 
 Provides metrics for [yyolk/xrpl-price-persist-oracle](https://github.com/yyolk/xrpl-price-persist-oracle).
 
+![price USD PT-1H](https://imgs.egge.gg/1h)
+
 ![price USD PT-3H](https://imgs.egge.gg/3h)
 
 ![price USD PT-3H Mainnet & Testnet](https://imgs.egge.gg/3h_all)
