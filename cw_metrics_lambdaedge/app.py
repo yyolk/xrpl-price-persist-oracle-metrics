@@ -5,6 +5,35 @@ import boto3
 
 MAX_AGE = 300  # 5 minutes
 
+METRIC_WIDGET_PT1H_LINE = """{
+    "metrics": [
+        [ "xrpl/mainnet/oracle", "price", "Currency", "USD", { "color": "#11bbaa" } ]
+    ],
+    "view": "timeSeries",
+    "stacked": false,
+    "liveData": true,
+    "stat": "Average",
+    "period": 1,
+    "yAxis": {
+        "right": {
+            "label": "",
+            "showUnits": false
+        },
+        "left": {
+            "label": "USD",
+            "showUnits": false
+        }
+    },
+    "title": "XRP/USD Last 1H",
+    "width": 800,
+    "height": 300,
+    "start": "-PT1H",
+    "end": "P0D",
+    "legend": {
+        "position": "hidden"
+    }
+}"""
+
 METRIC_WIDGET_PT3H_LINE = """{
     "metrics": [
         [ "xrpl/mainnet/oracle", "price", "Currency", "USD" ]
@@ -274,6 +303,8 @@ METRIC_WIDGET_PT1Y_LINE = """{
 cw = boto3.client("cloudwatch", region_name="us-east-1")
 
 definitive_metric_widgets = {
+    "60m": METRIC_WIDGET_PT1H_LINE,
+    "1h": METRIC_WIDGET_PT1H_LINE,
     "3h": METRIC_WIDGET_PT3H_LINE,
     "3h_all": METRIC_WIDGET_PT3H_LINE_ALLNETS,
     "24h": METRIC_WIDGET_PT1D_LINE,
